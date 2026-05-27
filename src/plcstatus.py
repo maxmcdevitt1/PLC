@@ -26,14 +26,14 @@ def on_off(coil):
 
 def print_status(status):
     os.system("clear")
-    print(f"{colors['BOLD']}{colors['GREEN']}Connected to PLC")
+    print(f"{colors['BOLD']}{colors['GREEN']}Connected to PLC{colors['RESET']}")
 
     for name in COILS:
         print(f"{name:<18}{on_off(status[name])}")
 
-    print(f"{'PART COUNT':<18}{colors['BLUE']}{status['parts']}")
+    print(f"{'PART COUNT':<18}{colors['BLUE']}{status['parts']}{colors['RESET']}")
     print("_"*32)
-    print(f"{'MACHINE STATE':<18}{colors['BLUE']}{status['MACHINE STATE']}")
+    print(f"{'MACHINE STATE':<18}{status['machine_state']}{colors['RESET']}")
 
 def write_csv_header(writer):
     writer.writerow([
@@ -46,9 +46,9 @@ def write_csv_header(writer):
 def write_csv_row(writer, status):
     writer.writerow([
             datetime.now().isoformat(timespec="seconds"),
-            status["PARTS"],
+            status["parts"],
             *[status[name] for name in COILS],
-            status['MACHINE STATE'],
+            status['machine_state'],
     ])
 
 
