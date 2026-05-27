@@ -1,6 +1,5 @@
 from pymodbus.client import ModbusTcpClient
 import os
-from plcstatus import colors as c
 
 PLC_IP = "192.168.10.10"
 PORT = 502
@@ -17,13 +16,13 @@ PART_COUNT_REGISTER = 49152
 
 def get_state(coils):
     if coils["robot_moving"]:
-        return f"{c['CYAN']}ROBOT MOVING"
+        return "ROBOT MOVING"
     elif coils["full"]:
-        return f"{c['RED']}STOPPED: REQUIRE PICKUP"
+        return "STOPPED: REQUIRE PICKUP"
     elif coils["enable"] and coils["auto_mode"]:
-        return f"{c['GREEN']}MACHINE READY"
+        return "MACHINE READY"
     else:
-        return f"{c['RED']}MACHINE NOT READY"
+        return "MACHINE NOT READY"
 
 class Plc:
     def __init__(self, ip=PLC_IP, port=PORT):

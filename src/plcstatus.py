@@ -23,6 +23,15 @@ def on_off(coil):
     if coil:
         return(f"{colors['GREEN']}ON{colors['RESET']}")
     return(f"{colors['RED']}OFF{colors['RESET']}")
+def machine_state(state):
+    if state == "ROBOT MOVING":
+        return f"{colors['CYAN']}{state}{colors['RESET']}"
+    elif state == "STOPPED: REQUIRE PICKUP":
+        return f"{colors['YELLOW']}{state}{colors['RESET']}"
+    elif state == "MACHINE READY":
+        return f"{colors['GREEN']}{state}{colors['RESET']}"
+    else:
+        return f"{colors['RED']}{state}{colors['RESET']}"
 
 def print_status(status):
     os.system("clear")
@@ -54,7 +63,7 @@ def write_csv_row(writer, status):
 
 if not plc.connect():
     print(f"{colors['RED']}Unable to connect to PLC.")
-    time.sleep(2)
+    sleep(2)
     raise SystemExit
 
 try:
