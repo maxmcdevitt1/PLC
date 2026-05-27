@@ -42,7 +42,7 @@ def print_status(status):
 
     print(f"{'PART COUNT':<18}{colors['BLUE']}{status['parts']}{colors['RESET']}")
     print("_"*32)
-    print(f"{'MACHINE STATE':<18}{status['machine_state']}{colors['RESET']}")
+    print(f"{'MACHINE STATE':<18}{machine_state(status['machine_state'])}{colors['RESET']}")
 
 def write_csv_header(writer):
     writer.writerow([
