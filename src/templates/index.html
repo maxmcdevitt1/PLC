@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMI :: Robotic Pick Cell #1</title>
+
+    <style>
+        :root {
+            --bg-0: #1a1f24;
+            --bg-1: #232a31;
+            --bg-2: #2c343c;
+            --bg-3: #3a444e;
+            --bevel-hi: #4a5560;
+            --bevel-lo: #0d1115;
+            --txt: #d8dee4;
+            --txt-dim: #8a949e;
+            --txt-label: #a8b3bd;
+            --accent: #4a90c2;
+            --seg-on: #ff9f1a;
+            --seg-off: #3a2c10;
+            --led-green: #2ecc40;
+            --led-green-dim: #143818;
+            --led-red: #ff3b30;
+            --led-red-dim: #3a0f0d;
+            --led-amber: #ffb000;
+            --led-amber-dim: #3a2a08;
+            --led-blue: #2aa3ff;
+            --led-blue-dim: #0e2638;
+            --led-off: #1a1d20;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #0a0d10;
+            color: var(--txt);
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-size: 13px;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .hmi {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 8px;
+        }
+
+        /* ---------- Top title bar ---------- */
+        .titlebar {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 16px;
+            background: linear-gradient(180deg, #2c343c 0%, #1a1f24 100%);
+            border: 1px solid #000;
+            border-top-color: var(--bevel-hi);
+            border-left-color: var(--bevel-hi);
+            padding: 10px 18px;
+        }
+
+        .titlebar .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand .logo {
+            width: 34px;
+            height: 34px;
+            background:
+                repeating-linear-gradient(45deg, #ffb000 0 8px, #1a1f24 8px 14px);
+            border: 1px solid #000;
+            box-shadow: inset 0 0 0 2px #2c343c;
+        }
+
+        .brand .name {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #ffb000;
+            text-shadow: 0 1px 0 #000;
+        }
+
+        .brand .sub {
+            font-size: 11px;
+            color: var(--txt-dim);
+            letter-spacing: 1px;
+        }
+
+        .titlebar .station {
+            text-align: center;
+            font-size: 13px;
+            color: var(--txt-label);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .station strong {
+            color: var(--txt);
+            font-weight: 600;
+        }
+
+        .titlebar .clock {
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 13px;
+            color: var(--txt-dim);
+            text-align: right;
+            line-height: 1.5;
+        }
+
+        .clock .live {
+            font-size: 16px;
+            color: var(--txt);
+        }
+
+        /* ---------- Alarm banner ---------- */
+        .alarm-bar {
+            display: grid;
+            grid-template-columns: 110px 1fr 180px;
+            align-items: center;
+            margin-top: 6px;
+            background: var(--bg-1);
+            border: 1px solid #000;
+            border-top-color: var(--bevel-hi);
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 13px;
+            min-height: 34px;
+        }
+
+        .alarm-bar .tag {
+            background: #3a444e;
+            color: var(--txt);
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 2px;
+            padding: 9px 0;
+            border-right: 1px solid #000;
+        }
+
+        .alarm-bar .msg {
+            padding: 0 14px;
+            color: var(--txt-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .alarm-bar .ts {
+            padding: 0 14px;
+            color: var(--txt-dim);
+            text-align: right;
+            border-left: 1px solid #000;
+        }
+
+        .alarm-bar.active .tag {
+            background: var(--led-red);
+            color: #fff;
+            animation: alarm-flash 1s steps(2) infinite;
+        }
+
+        .alarm-bar.active .msg {
+            color: #ffd0cc;
+            font-weight: 600;
+        }
+
+        @keyframes alarm-flash {
+            50% { background: #5a0a0a; color: #ff9994; }
+        }
+
+        /* ---------- Main grid ---------- */
+        .grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .panel {
+            background: var(--bg-1);
+            border: 1px solid #000;
+            border-top-color: var(--bevel-hi);
+            border-left-color: var(--bevel-hi);
+            padding: 0;
+        }
+
+        .panel > header {
+            background: linear-gradient(180deg, #3a444e 0%, #2c343c 100%);
+            color: var(--txt);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 7px 12px;
+            border-bottom: 1px solid #000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel > header .hdr-meta {
+            font-weight: 400;
+            color: var(--txt-dim);
+            letter-spacing: 1px;
+        }
+
+        .panel .body {
+            padding: 14px;
+        }
+
+        /* ---------- Process mimic / schematic ---------- */
+        .mimic {
+            position: relative;
+            background:
+                linear-gradient(180deg, #1c2228 0%, #141A1F 100%);
+            border: 1px inset #0a0d10;
+            height: 360px;
+            overflow: hidden;
+        }
+
+        .mimic svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .mimic .legend {
+            position: absolute;
+            left: 10px;
+            bottom: 8px;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 10px;
+            color: var(--txt-dim);
+            letter-spacing: 1px;
+        }
+
+        .mimic .stamp {
+            position: absolute;
+            right: 10px;
+            top: 8px;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 10px;
+            color: var(--txt-dim);
+            letter-spacing: 1px;
+        }
+
+        /* ---------- State chip (machine state) ---------- */
+        .state-chip {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: 90px 1fr;
+            background: #0d1115;
+            border: 1px solid #000;
+            border-top-color: #2a323a;
+        }
+
+        .state-chip .lbl {
+            background: #3a444e;
+            color: var(--txt);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+            padding: 14px 0;
+            border-right: 1px solid #000;
+        }
+
+        .state-chip .val {
+            padding: 14px 18px;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--txt);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .state-chip .val .pill {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #555;
+            border: 1px solid #000;
+            box-shadow: inset 0 0 4px rgba(0,0,0,.6);
+        }
+
+        .state-chip[data-state="ok"]      .val { color: #6dde7c; }
+        .state-chip[data-state="ok"]      .val .pill { background: var(--led-green); box-shadow: 0 0 10px var(--led-green), inset 0 0 4px rgba(0,0,0,.4); }
+        .state-chip[data-state="moving"]  .val { color: #6cc6ff; }
+        .state-chip[data-state="moving"]  .val .pill { background: var(--led-blue); box-shadow: 0 0 10px var(--led-blue), inset 0 0 4px rgba(0,0,0,.4); animation: pulse 1.1s ease-in-out infinite; }
+        .state-chip[data-state="warn"]    .val { color: var(--led-amber); }
+        .state-chip[data-state="warn"]    .val .pill { background: var(--led-amber); box-shadow: 0 0 10px var(--led-amber), inset 0 0 4px rgba(0,0,0,.4); }
+        .state-chip[data-state="bad"]     .val { color: #ff7a72; }
+        .state-chip[data-state="bad"]     .val .pill { background: var(--led-red); box-shadow: 0 0 10px var(--led-red), inset 0 0 4px rgba(0,0,0,.4); animation: pulse 0.5s steps(2) infinite; }
+        .state-chip[data-state="neutral"] .val .pill { background: #444; }
+
+        @keyframes pulse {
+            50% { opacity: 0.45; }
+        }
+
+        /* ---------- Pilot light bank ---------- */
+        .pilot-bank {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .pilot {
+            display: grid;
+            grid-template-columns: 38px 1fr 70px;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(180deg, #2c343c, #1f262c);
+            border: 1px solid #000;
+            border-top-color: var(--bevel-hi);
+            border-left-color: var(--bevel-hi);
+            padding: 8px 12px;
+            min-height: 46px;
+        }
+
+        .pilot .led {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--led-off);
+            border: 2px solid #0a0d10;
+            box-shadow:
+                inset 0 1px 2px rgba(255,255,255,0.12),
+                inset 0 -3px 6px rgba(0,0,0,0.7),
+                0 1px 0 rgba(255,255,255,0.06);
+            position: relative;
+        }
+
+        .pilot .led::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 5px;
+            width: 7px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.18);
+        }
+
+        .pilot[data-color="green"][data-on="true"]  .led { background: var(--led-green);  box-shadow: 0 0 10px var(--led-green),  inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -3px 5px rgba(0,0,0,0.45); }
+        .pilot[data-color="green"][data-on="false"] .led { background: var(--led-green-dim); }
+        .pilot[data-color="red"][data-on="true"]    .led { background: var(--led-red);    box-shadow: 0 0 10px var(--led-red),    inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -3px 5px rgba(0,0,0,0.45); }
+        .pilot[data-color="red"][data-on="false"]   .led { background: var(--led-red-dim); }
+        .pilot[data-color="amber"][data-on="true"]  .led { background: var(--led-amber);  box-shadow: 0 0 10px var(--led-amber),  inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -3px 5px rgba(0,0,0,0.45); }
+        .pilot[data-color="amber"][data-on="false"] .led { background: var(--led-amber-dim); }
+        .pilot[data-color="blue"][data-on="true"]   .led { background: var(--led-blue);   box-shadow: 0 0 10px var(--led-blue),   inset 0 1px 2px rgba(255,255,255,0.3), inset 0 -3px 5px rgba(0,0,0,0.45); }
+        .pilot[data-color="blue"][data-on="false"]  .led { background: var(--led-blue-dim); }
+
+        .pilot .name {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            color: var(--txt);
+            text-transform: uppercase;
+        }
+
+        .pilot .tag {
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 10px;
+            color: var(--txt-dim);
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        .pilot .ind {
+            justify-self: end;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            padding: 3px 8px;
+            border: 1px solid #000;
+            background: #0d1115;
+            color: var(--txt-dim);
+            min-width: 56px;
+            text-align: center;
+        }
+
+        .pilot[data-on="true"] .ind { color: #cbe9ff; }
+
+        /* ---------- 7-seg counter ---------- */
+        .counter {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: end;
+            background: #0a0d10;
+            border: 2px inset #1a1f24;
+            padding: 14px 18px;
+            gap: 12px;
+        }
+
+        .counter .seg {
+            font-family: "Courier New", monospace;
+            font-weight: 700;
+            font-size: 64px;
+            letter-spacing: 6px;
+            color: var(--seg-on);
+            text-shadow:
+                0 0 4px rgba(255, 159, 26, 0.85),
+                0 0 14px rgba(255, 159, 26, 0.55);
+            line-height: 1;
+            position: relative;
+        }
+
+        .counter .seg .ghost {
+            position: absolute;
+            inset: 0;
+            color: var(--seg-off);
+            text-shadow: none;
+            z-index: 0;
+        }
+
+        .counter .seg .real {
+            position: relative;
+            z-index: 1;
+        }
+
+        .counter .unit {
+            font-size: 11px;
+            color: var(--txt-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding-bottom: 10px;
+        }
+
+        .counter .unit strong {
+            color: var(--txt);
+            font-size: 13px;
+        }
+
+        /* ---------- Data rows ---------- */
+        .kv {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            padding: 8px 4px;
+            border-bottom: 1px dashed #2a323a;
+            font-family: "Consolas", "Courier New", monospace;
+        }
+
+        .kv:last-child { border-bottom: none; }
+
+        .kv .k {
+            color: var(--txt-label);
+            letter-spacing: 1px;
+        }
+
+        .kv .v {
+            color: var(--txt);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* ---------- Footer status strip ---------- */
+        .statusbar {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            margin-top: 6px;
+            background: linear-gradient(180deg, #2c343c 0%, #1a1f24 100%);
+            border: 1px solid #000;
+            border-top-color: var(--bevel-hi);
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 11px;
+        }
+
+        .statusbar .cell {
+            padding: 8px 14px;
+            border-right: 1px solid #000;
+            color: var(--txt-dim);
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .statusbar .cell:last-child { border-right: none; }
+
+        .statusbar .cell strong {
+            color: var(--txt);
+            font-weight: 600;
+        }
+
+        .statusbar .cell.online strong { color: var(--led-green); }
+        .statusbar .cell.offline strong { color: var(--led-red); }
+
+        /* ---------- responsive ---------- */
+        @media (max-width: 980px) {
+            .grid { grid-template-columns: 1fr; }
+            .statusbar { grid-template-columns: 1fr 1fr; }
+            .statusbar .cell { border-bottom: 1px solid #000; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="hmi">
+
+        <!-- ===== Title bar ===== -->
+        <div class="titlebar">
+            <div class="brand">
+                <div class="logo"></div>
+                <div>
+                    <div class="name">AXIS-7 CONTROL</div>
+                    <div class="sub">SCADA / HMI &mdash; PROCESS VIEW</div>
+                </div>
+            </div>
+            <div class="station">
+                STATION <strong>PCK-01</strong> &nbsp;|&nbsp; LINE <strong>A</strong> &nbsp;|&nbsp; OP <strong>MAINT</strong>
+            </div>
+            <div class="clock">
+                <div class="live" id="clock_time">--:--:--</div>
+                <div id="clock_date">----/--/--</div>
+            </div>
+        </div>
+
+        <!-- ===== Alarm strip ===== -->
+        <div class="alarm-bar" id="alarm_bar">
+            <div class="tag" id="alarm_tag">NORMAL</div>
+            <div class="msg"  id="alarm_msg">No active alarms</div>
+            <div class="ts"   id="alarm_ts">LAST: --:--:--</div>
+        </div>
+
+        <!-- ===== Main split ===== -->
+        <div class="grid">
+
+            <!-- LEFT: Process schematic + state -->
+            <section class="panel">
+                <header>
+                    <span>P&amp;ID &mdash; Robotic Pick Cell #1</span>
+                    <span class="hdr-meta">SCAN: <span id="scan_rate">1.00 Hz</span></span>
+                </header>
+                <div class="body">
+
+                    <div class="mimic">
+                        <div class="stamp">DWG-PCK01 / REV-A</div>
+                        <div class="legend">SCALE: NTS &nbsp; | &nbsp; UNITS: mm</div>
+
+                        <svg viewBox="0 0 700 340" preserveAspectRatio="xMidYMid meet">
+                            <defs>
+                                <linearGradient id="floor" x1="0" x2="0" y1="0" y2="1">
+                                    <stop offset="0" stop-color="#1f262c"/>
+                                    <stop offset="1" stop-color="#141a1f"/>
+                                </linearGradient>
+                                <linearGradient id="metal" x1="0" x2="0" y1="0" y2="1">
+                                    <stop offset="0" stop-color="#4a5560"/>
+                                    <stop offset="1" stop-color="#262d34"/>
+                                </linearGradient>
+                                <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                    <line x1="0" y1="0" x2="0" y2="6" stroke="#2a323a" stroke-width="2"/>
+                                </pattern>
+                            </defs>
+
+                            <!-- floor / cell outline -->
+                            <rect x="10" y="10" width="680" height="320" fill="url(#floor)" stroke="#3a444e" stroke-dasharray="4 3"/>
+                            <text x="20" y="28" fill="#5a6570" font-family="Consolas" font-size="10">CELL ENVELOPE</text>
+
+                            <!-- safety zone hatch -->
+                            <rect x="120" y="60" width="460" height="220" fill="url(#hatch)" opacity="0.35"/>
+                            <rect x="120" y="60" width="460" height="220" fill="none" stroke="#ffb000" stroke-width="1" stroke-dasharray="6 4" opacity="0.7"/>
+                            <text x="128" y="76" fill="#ffb000" font-family="Consolas" font-size="9" letter-spacing="2">SAFETY ZONE</text>
+
+                            <!-- Conveyor (infeed) -->
+                            <g id="mimic_conveyor">
+                                <rect x="40" y="170" width="180" height="46" fill="url(#metal)" stroke="#0a0d10"/>
+                                <g id="conveyor_rollers">
+                                    <circle cx="60"  cy="193" r="6" fill="#1a1f24" stroke="#5a6570"/>
+                                    <circle cx="90"  cy="193" r="6" fill="#1a1f24" stroke="#5a6570"/>
+                                    <circle cx="120" cy="193" r="6" fill="#1a1f24" stroke="#5a6570"/>
+                                    <circle cx="150" cy="193" r="6" fill="#1a1f24" stroke="#5a6570"/>
+                                    <circle cx="180" cy="193" r="6" fill="#1a1f24" stroke="#5a6570"/>
+                                    <circle cx="210" cy="193" r="6" fill="#1a1f24" stroke="#5a6570"/>
+                                </g>
+                                <text x="40" y="232" fill="#8a949e" font-family="Consolas" font-size="10">CONV-01 / INFEED</text>
+                            </g>
+
+                            <!-- Photoeye (emitter + receiver) -->
+                            <g id="mimic_photoeye">
+                                <rect x="226" y="146" width="14" height="18" fill="#3a444e" stroke="#0a0d10"/>
+                                <rect x="226" y="220" width="14" height="18" fill="#3a444e" stroke="#0a0d10"/>
+                                <line id="photoeye_beam" x1="233" y1="164" x2="233" y2="220" stroke="#ff3b30" stroke-width="2" stroke-dasharray="3 3" opacity="0.85"/>
+                                <text x="247" y="194" fill="#8a949e" font-family="Consolas" font-size="10">PE-201</text>
+                            </g>
+
+                            <!-- Robot base + arm -->
+                            <g id="mimic_robot">
+                                <!-- base -->
+                                <rect x="370" y="210" width="80" height="50" fill="url(#metal)" stroke="#0a0d10"/>
+                                <rect x="385" y="200" width="50" height="14" fill="#3a444e" stroke="#0a0d10"/>
+                                <circle cx="410" cy="207" r="6" fill="#1a1f24" stroke="#5a6570"/>
+                                <text x="370" y="276" fill="#8a949e" font-family="Consolas" font-size="10">RBT-01</text>
+
+                                <!-- arm (rotates around 410,207) -->
+                                <g id="robot_arm" transform="rotate(-25 410 207)">
+                                    <rect x="406" y="120" width="8" height="90" fill="#5a6570" stroke="#0a0d10"/>
+                                    <rect x="396" y="108" width="28" height="16" fill="#3a444e" stroke="#0a0d10"/>
+                                    <rect x="402" y="100" width="16" height="10" fill="#5a6570" stroke="#0a0d10"/>
+                                </g>
+                            </g>
+
+                            <!-- Pick / drop bin (FULL sensor target) -->
+                            <g id="mimic_bin">
+                                <rect x="500" y="180" width="120" height="80" fill="none" stroke="#5a6570" stroke-width="2"/>
+                                <rect id="bin_fill" x="502" y="240" width="116" height="18" fill="#3a444e"/>
+                                <text x="500" y="276" fill="#8a949e" font-family="Consolas" font-size="10">BIN-01 / OUTFEED</text>
+                            </g>
+
+                            <!-- Flow arrows -->
+                            <g stroke="#5a6570" fill="none" stroke-width="1.5">
+                                <path d="M225 110 L 360 110" stroke-dasharray="4 3"/>
+                                <polygon points="360,110 354,106 354,114" fill="#5a6570"/>
+                                <text x="265" y="103" fill="#8a949e" font-family="Consolas" font-size="9">PICK PATH</text>
+
+                                <path d="M460 130 L 560 170" stroke-dasharray="4 3"/>
+                                <polygon points="560,170 552,168 556,162" fill="#5a6570"/>
+                                <text x="475" y="125" fill="#8a949e" font-family="Consolas" font-size="9">PLACE</text>
+                            </g>
+
+                            <!-- mode badge -->
+                            <g id="mimic_mode">
+                                <rect x="540" y="20" width="140" height="28" fill="#0d1115" stroke="#3a444e"/>
+                                <circle id="mode_led" cx="556" cy="34" r="6" fill="#143818" stroke="#0a0d10"/>
+                                <text x="572" y="38" fill="#a8b3bd" font-family="Consolas" font-size="11" letter-spacing="2">AUTO MODE</text>
+                            </g>
+
+                            <!-- enable badge -->
+                            <g id="mimic_enable">
+                                <rect x="540" y="52" width="140" height="28" fill="#0d1115" stroke="#3a444e"/>
+                                <circle id="enable_led" cx="556" cy="66" r="6" fill="#3a2a08" stroke="#0a0d10"/>
+                                <text x="572" y="70" fill="#a8b3bd" font-family="Consolas" font-size="11" letter-spacing="2">DRIVE ENABLE</text>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <div id="state_chip" class="state-chip" data-state="neutral">
+                        <div class="lbl">STATE</div>
+                        <div class="val">
+                            <span class="pill"></span>
+                            <span id="machine_state">STARTING</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT: Pilot lights + counter + comms -->
+            <section class="panel">
+                <header>
+                    <span>I/O Status &amp; Production</span>
+                    <span class="hdr-meta">MODBUS/TCP</span>
+                </header>
+                <div class="body">
+
+                    <div class="pilot-bank">
+                        <div class="pilot" id="p_full"        data-color="red"   data-on="false">
+                            <div class="led"></div>
+                            <div>
+                                <div class="name">FULL</div>
+                                <div class="tag">DI 16384</div>
+                            </div>
+                            <div class="ind" id="ind_full">OFF</div>
+                        </div>
+
+                        <div class="pilot" id="p_robot_moving" data-color="blue"  data-on="false">
+                            <div class="led"></div>
+                            <div>
+                                <div class="name">ROBOT MOVING</div>
+                                <div class="tag">DI 16385</div>
+                            </div>
+                            <div class="ind" id="ind_robot_moving">OFF</div>
+                        </div>
+
+                        <div class="pilot" id="p_photoeye"     data-color="amber" data-on="false">
+                            <div class="led"></div>
+                            <div>
+                                <div class="name">PHOTOEYE</div>
+                                <div class="tag">DI 16386</div>
+                            </div>
+                            <div class="ind" id="ind_photoeye">OFF</div>
+                        </div>
+
+                        <div class="pilot" id="p_auto_mode"    data-color="green" data-on="false">
+                            <div class="led"></div>
+                            <div>
+                                <div class="name">AUTO MODE</div>
+                                <div class="tag">DI 16387</div>
+                            </div>
+                            <div class="ind" id="ind_auto_mode">OFF</div>
+                        </div>
+
+                        <div class="pilot" id="p_enable"       data-color="green" data-on="false">
+                            <div class="led"></div>
+                            <div>
+                                <div class="name">DRIVE ENABLE</div>
+                                <div class="tag">DI 16388</div>
+                            </div>
+                            <div class="ind" id="ind_enable">OFF</div>
+                        </div>
+
+                        <div class="pilot" id="p_link"         data-color="green" data-on="false">
+                            <div class="led"></div>
+                            <div>
+                                <div class="name">PLC LINK</div>
+                                <div class="tag">TCP/502</div>
+                            </div>
+                            <div class="ind" id="ind_link">DOWN</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:14px;">
+                        <header style="background:none;padding:0 0 6px 0;border:none;color:var(--txt-label);font-size:10px;letter-spacing:2px;">PARTS PRODUCED &mdash; HR 40001</header>
+                        <div class="counter">
+                            <div class="seg">
+                                <span class="ghost">88888</span>
+                                <span class="real" id="parts">-----</span>
+                            </div>
+                            <div class="unit">
+                                <div><strong id="parts_session">0</strong></div>
+                                SESSION
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:14px;">
+                        <header style="background:none;padding:0 0 6px 0;border:none;color:var(--txt-label);font-size:10px;letter-spacing:2px;">COMMUNICATIONS</header>
+                        <div class="kv">
+                            <span class="k">DEVICE</span>
+                            <span class="v">PLC / MODBUS TCP</span>
+                        </div>
+                        <div class="kv">
+                            <span class="k">ENDPOINT</span>
+                            <span class="v">192.168.10.10:502</span>
+                        </div>
+                        <div class="kv">
+                            <span class="k">LINK</span>
+                            <span class="v" id="link_text">--</span>
+                        </div>
+                        <div class="kv">
+                            <span class="k">LAST POLL</span>
+                            <span class="v" id="last_poll">--:--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===== Footer status bar ===== -->
+        <div class="statusbar">
+            <div class="cell" id="sb_link"><span>LINK</span><strong id="sb_link_v">DOWN</strong></div>
+            <div class="cell"><span>STATION</span><strong>PCK-01</strong></div>
+            <div class="cell"><span>MODE</span><strong id="sb_mode">MANUAL</strong></div>
+            <div class="cell"><span>SHIFT</span><strong id="sb_shift">--</strong></div>
+            <div class="cell"><span>UPTIME</span><strong id="sb_uptime">00:00:00</strong></div>
+        </div>
+    </div>
+
+    <script>
+        // ----- helpers -----
+        const $ = (id) => document.getElementById(id);
+
+        function pad(n, w) { return String(n).padStart(w, "0"); }
+
+        function fmtTime(d) {
+            return pad(d.getHours(),2) + ":" + pad(d.getMinutes(),2) + ":" + pad(d.getSeconds(),2);
+        }
+
+        function fmtDate(d) {
+            return d.getFullYear() + "/" + pad(d.getMonth()+1,2) + "/" + pad(d.getDate(),2);
+        }
+
+        function setPilot(id, on, indOn, indOff) {
+            const el = $(id);
+            const isOn = on === true;
+            el.setAttribute("data-on", isOn ? "true" : "false");
+            const ind = el.querySelector(".ind");
+            if (on === null || on === undefined) {
+                ind.textContent = "--";
+            } else {
+                ind.textContent = isOn ? (indOn || "ON") : (indOff || "OFF");
+            }
+        }
+
+        function setSegmentParts(val) {
+            const el = $("parts");
+            if (val === null || val === undefined) {
+                el.textContent = "-----";
+                return;
+            }
+            const s = String(val);
+            // right-aligned 5 digit fixed-width
+            const padded = s.length >= 5 ? s.slice(-5) : s.padStart(5, "0");
+            el.textContent = padded;
+        }
+
+        // ----- state classification -----
+        function classifyState(text) {
+            const t = String(text || "").toUpperCase();
+            if (t.includes("ERROR") || t.includes("FAULT") || t.includes("FAILED")) return "bad";
+            if (t.includes("ROBOT MOVING")) return "moving";
+            if (t.includes("STOPPED") || t.includes("FULL") || t.includes("PICKUP")) return "warn";
+            if (t.includes("NOT READY")) return "bad";
+            if (t.includes("READY"))    return "ok";
+            return "neutral";
+        }
+
+        // ----- mimic animation -----
+        let convOffset = 0;
+        let armAngle = -25;
+        let armDir = 1;
+
+        function animateMimic(data) {
+            // conveyor rollers spin when robot not moving and not full (i.e. running)
+            const running = data && data.connected && !data.full;
+            convOffset += running ? 0.6 : 0;
+            const rollers = document.getElementById("conveyor_rollers");
+            if (rollers) {
+                rollers.style.transform = "translateX(" + (Math.sin(convOffset) * 2) + "px)";
+            }
+
+            // photoeye beam: red dashed when blocked (photoeye=true means blocked here)
+            const beam = document.getElementById("photoeye_beam");
+            if (beam) {
+                if (data && data.photoeye === true) {
+                    beam.setAttribute("stroke", "#ff3b30");
+                    beam.setAttribute("opacity", "0.95");
+                } else {
+                    beam.setAttribute("stroke", "#2ecc40");
+                    beam.setAttribute("opacity", "0.55");
+                }
+            }
+
+            // robot arm: oscillate when moving
+            const arm = document.getElementById("robot_arm");
+            if (arm) {
+                if (data && data.robot_moving === true) {
+                    armAngle += armDir * 1.6;
+                    if (armAngle > 35)  armDir = -1;
+                    if (armAngle < -55) armDir =  1;
+                }
+                arm.setAttribute("transform", "rotate(" + armAngle.toFixed(1) + " 410 207)");
+            }
+
+            // bin fill
+            const fill = document.getElementById("bin_fill");
+            if (fill) {
+                if (data && data.full === true) {
+                    fill.setAttribute("height", "76");
+                    fill.setAttribute("y", "182");
+                    fill.setAttribute("fill", "#ffb000");
+                } else {
+                    fill.setAttribute("height", "18");
+                    fill.setAttribute("y", "240");
+                    fill.setAttribute("fill", "#3a444e");
+                }
+            }
+
+            // mode + enable LEDs on the mimic
+            const modeLed = document.getElementById("mode_led");
+            if (modeLed) {
+                modeLed.setAttribute("fill",
+                    data && data.auto_mode === true ? "#2ecc40" : "#143818");
+            }
+            const enableLed = document.getElementById("enable_led");
+            if (enableLed) {
+                enableLed.setAttribute("fill",
+                    data && data.enable === true ? "#2ecc40" : "#143818");
+            }
+        }
+
+        // ----- session counter (parts since page load) -----
+        let baselineParts = null;
+
+        function updateSession(parts) {
+            if (typeof parts !== "number") return;
+            if (baselineParts === null) baselineParts = parts;
+            const diff = Math.max(0, parts - baselineParts);
+            $("parts_session").textContent = String(diff);
+        }
+
+        // ----- uptime + clock -----
+        const pageStart = Date.now();
+
+        function shiftLabel(d) {
+            const h = d.getHours();
+            if (h >= 6  && h < 14) return "1ST";
+            if (h >= 14 && h < 22) return "2ND";
+            return "3RD";
+        }
+
+        function tickClock() {
+            const now = new Date();
+            $("clock_time").textContent = fmtTime(now);
+            $("clock_date").textContent = fmtDate(now);
+            $("sb_shift").textContent   = shiftLabel(now);
+
+            const sec = Math.floor((Date.now() - pageStart) / 1000);
+            $("sb_uptime").textContent =
+                pad(Math.floor(sec/3600),2) + ":" +
+                pad(Math.floor((sec%3600)/60),2) + ":" +
+                pad(sec%60,2);
+        }
+
+        // ----- main poll -----
+        let lastAlarmText = null;
+
+        async function updateStatus() {
+            let data = null;
+            let backendError = null;
+
+            try {
+                const r = await fetch("/api/status");
+                data = await r.json();
+            } catch (e) {
+                backendError = e;
+            }
+
+            const now = new Date();
+            const linkUp = !backendError && data && data.connected === true;
+
+            // ---- machine state chip ----
+            const stateText = backendError
+                ? "BACKEND ERROR"
+                : (data && data.machine_state ? data.machine_state : "---");
+            $("machine_state").textContent = stateText;
+            $("state_chip").setAttribute("data-state",
+                backendError ? "bad" : classifyState(stateText));
+
+            // ---- pilot lights ----
+            if (data && !backendError) {
+                setPilot("p_full",         data.full);
+                setPilot("p_robot_moving", data.robot_moving);
+                setPilot("p_photoeye",     data.photoeye);
+                setPilot("p_auto_mode",    data.auto_mode);
+                setPilot("p_enable",       data.enable);
+            } else {
+                setPilot("p_full", null);
+                setPilot("p_robot_moving", null);
+                setPilot("p_photoeye", null);
+                setPilot("p_auto_mode", null);
+                setPilot("p_enable", null);
+            }
+
+            // ---- link pilot + statusbar ----
+            setPilot("p_link", linkUp, "UP", "DOWN");
+            $("link_text").textContent = linkUp ? "ONLINE"  : "OFFLINE";
+            $("sb_link_v").textContent = linkUp ? "ONLINE"  : "OFFLINE";
+            $("sb_link").className     = "cell " + (linkUp ? "online" : "offline");
+            $("sb_mode").textContent   = data && data.auto_mode ? "AUTO" : "MANUAL";
+
+            // ---- counter ----
+            setSegmentParts(data && data.parts !== undefined ? data.parts : null);
+            if (data && typeof data.parts === "number") updateSession(data.parts);
+
+            // ---- alarm banner ----
+            const bar = $("alarm_bar");
+            let alarmMsg = null;
+            if (backendError) {
+                alarmMsg = "HMI BACKEND UNREACHABLE";
+            } else if (data && data.error) {
+                alarmMsg = String(data.error);
+            } else if (data && /ERROR|FAULT|FAILED/i.test(stateText)) {
+                alarmMsg = stateText;
+            }
+
+            if (alarmMsg) {
+                bar.classList.add("active");
+                $("alarm_tag").textContent = "ALARM";
+                $("alarm_msg").textContent = alarmMsg;
+                if (alarmMsg !== lastAlarmText) {
+                    $("alarm_ts").textContent = "LAST: " + fmtTime(now);
+                    lastAlarmText = alarmMsg;
+                }
+            } else {
+                bar.classList.remove("active");
+                $("alarm_tag").textContent = "NORMAL";
+                $("alarm_msg").textContent = "No active alarms";
+                lastAlarmText = null;
+            }
+
+            // ---- footer + mimic ----
+            $("last_poll").textContent = fmtTime(now);
+            animateMimic(backendError ? null : data);
+        }
+
+        // ----- intervals -----
+        tickClock();
+        setInterval(tickClock, 1000);
+
+        updateStatus();
+        setInterval(updateStatus, 1000);
+
+        // smoother mimic animation independent of poll
+        setInterval(() => {
+            // re-run the visual tick with last-known status by re-fetching cheap data via cache
+            // (no fetch — just animate using current DOM attribute state)
+            const photoBlocked = $("p_photoeye").getAttribute("data-on") === "true";
+            const moving       = $("p_robot_moving").getAttribute("data-on") === "true";
+            const full         = $("p_full").getAttribute("data-on") === "true";
+            const auto         = $("p_auto_mode").getAttribute("data-on") === "true";
+            const en           = $("p_enable").getAttribute("data-on") === "true";
+            animateMimic({
+                connected: true,
+                photoeye: photoBlocked,
+                robot_moving: moving,
+                full: full,
+                auto_mode: auto,
+                enable: en,
+            });
+        }, 60);
+    </script>
+</body>
+
+</html>
