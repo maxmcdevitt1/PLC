@@ -1,5 +1,4 @@
 from pymodbus.client import ModbusTcpClient
-import os
 
 PLC_IP = "192.168.10.10"
 PORT = 502
