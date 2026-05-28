@@ -5,7 +5,6 @@ from datetime import datetime
 
 from plc_client import Plc, COILS
 
-plc = Plc()
 
 colors = {
     # Terminal colors
@@ -18,6 +17,7 @@ colors = {
     "CYAN":"\033[96m",
     "GRAY":"\033[90m",
 }
+
 
 def on_off(coil):
     if coil:
@@ -61,6 +61,8 @@ def write_csv_row(writer, status):
     ])
 
 
+def main():
+plc = Plc()
 if not plc.connect():
     print(f"{colors['RED']}Unable to connect to PLC.")
     sleep(2)
@@ -82,3 +84,7 @@ try:
             f.flush()
             sleep(.2)
 finally: plc.close()
+
+
+if __name__ == "__main__":
+    main()
