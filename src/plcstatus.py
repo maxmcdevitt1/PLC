@@ -3,8 +3,15 @@ import os
 import csv
 from datetime import datetime
 
-from plc_client import Plc, COILS
+from plc_client import Plc
 
+COILS = {
+    "full":16384,
+    "robot_moving":16385,
+    "photoeye":16386,
+    "auto_mode":16387,
+    "enable":16388,
+        }
 
 colors = {
     # Terminal colors
@@ -62,28 +69,28 @@ def write_csv_row(writer, status):
 
 
 def main():
-plc = Plc()
-if not plc.connect():
-    print(f"{colors['RED']}Unable to connect to PLC.")
-    sleep(2)
-    raise SystemExit
+    plc = Plc()
+    if not plc.connect():
+        print(f"{colors['RED']}Unable to connect to PLC.")
+        sleep(2)
+        raise SystemExit
 
-try:
-    os.makedirs("plc_logs", exist_ok=True)
-    log_path="plc_logs/plc_data.csv"
-    write_header = not os.path_exists(log_path) or os.path.getsize(log_path) == 0
-    with open(log_path, "a", newline="") as f:
-        writer = csv.writer(f)
-        if write_header:
-            write_csv_header(writer)
+    try:
+        os.makedirs("plc_logs", exist_ok=True)
+        log_path="plc_logs/plc_data.csv"
+        write_header = not os.path_exists(log_path) or os.path.getsize(log_path) == 0
+        with open(log_path, "a", newline="") as f:
+            writer = csv.writer(f)
+            if write_header:
+                write_csv_header(writer)
 
-        while True:
-            status = plc.read_status()
-            print_status(status)
-            write_csv_row(writer, status)
-            f.flush()
-            sleep(.2)
-finally: plc.close()
+            while True:
+                status = plc.read_status()
+                print_status(status)
+                write_csv_row(writer, status)
+                f.flush()
+                sleep(.2)
+    finally: plc.close()
 
 
 if __name__ == "__main__":

@@ -2,14 +2,8 @@ from pymodbus.client import ModbusTcpClient
 
 PLC_IP = "192.168.10.10"
 PORT = 502
-
-COILS = {
-    "full": 16384,
-    "robot_moving": 16385,
-    "photoeye": 16386,
-    "auto_mode": 16387,
-    "enable": 16388,
-}
+COIL_BASE = 16384
+COILS_ORDER = ["full", "robot_moving","photoeye","auto_mode","enable",]
 
 PART_COUNT_REGISTER = 49152
 
@@ -51,9 +45,10 @@ class Plc:
         return (result << 16) | low
 
     def read_status(self):
-        coils = {}
-        for name, address in COILS.items():
-            coils[name] = self.read_coil(address)
+        result=self.client.read_coils(COIL_BASE, count=len(COIL_ORDER))
+        if result.isError():
+            raise RuntimeError(result)
+        coils = {name: result.bits[i] for i, name in enumerate(COIL_ORDER)}
         parts = self.read_register(PART_COUNT_REGISTER)
         machine_state = get_state(coils)
         return{
