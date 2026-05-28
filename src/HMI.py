@@ -1,6 +1,6 @@
 from time import sleep
 from threading import Thread, Lock
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 
 from plc_client import Plc
 
@@ -65,7 +65,7 @@ def plc_poll_loop():
 
 @app.route("/")
 def index():
-    return "PLC HMI backend is running."
+    return render_template("index.html")
 
 
 @app.route("/api/status")
