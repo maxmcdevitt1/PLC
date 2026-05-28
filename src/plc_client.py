@@ -46,7 +46,9 @@ class Plc:
         result = self.client.read_holding_registers(addy, count=2)
         if result.isError():
             raise RuntimeError(result)
-        return result.registers[0]
+        #CLICK stores 32 bit values low-word first
+        low, high = result.registers[0], result.registers[1]
+        return (result << 16) | low
 
     def read_status(self):
         coils = {}

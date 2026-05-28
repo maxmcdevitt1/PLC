@@ -68,9 +68,12 @@ if not plc.connect():
 
 try:
     os.makedirs("plc_logs", exist_ok=True)
-    with open("plc_logs/plc_data.csv", "a", newline="") as f:
+    log_path="plc_logs/plc_data.csv"
+    write_header = not os.path_exists(log_path) or os.path.getsize(log_path) == 0
+    with open(log_path, "a", newline="") as f:
         writer = csv.writer(f)
-        write_csv_header(writer)
+        if write_header:
+            write_csv_header(writer)
 
         while True:
             status = plc.read_status()
