@@ -42,13 +42,13 @@ class Plc:
             raise RuntimeError(result)
         #CLICK stores 32 bit values low-word first
         low, high = result.registers[0], result.registers[1]
-        return (result << 16) | low
+        return (high << 16) | low
 
     def read_status(self):
-        result=self.client.read_coils(COIL_BASE, count=len(COIL_ORDER))
+        result=self.client.read_coils(COIL_BASE, count=len(COILS_ORDER))
         if result.isError():
             raise RuntimeError(result)
-        coils = {name: result.bits[i] for i, name in enumerate(COIL_ORDER)}
+        coils = {name: result.bits[i] for i, name in enumerate(COILS_ORDER)}
         parts = self.read_register(PART_COUNT_REGISTER)
         machine_state = get_state(coils)
         return{
