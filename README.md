@@ -16,7 +16,7 @@ A bench-top, DIN-rail-mounted PLC training cell that simulates a conveyor-to-rob
 | -------------- | -------------- | --------------------- |
 | CLICK PLC      | 192.168.10.10  | Modbus TCP server     |
 | Raspberry Pi   | 192.168.10.20  | Modbus client + HMI   |
-| Engineering PC | 192.168.10.30  | SSH workstation       |
+|  PC | *  | SSH workstation       |
 
 ```
 [Laptop] --SSH--> [Raspberry Pi] --Modbus TCP/502--> [CLICK PLC] --24V I/O--> [Photoeye / Switches / LEDs]
@@ -34,7 +34,7 @@ A bench-top, DIN-rail-mounted PLC training cell that simulates a conveyor-to-rob
 | Y002        | LED                   | Part detected            |
 | Y003        | LED                   | Robot request            |
 | Y004        | LED                   | Robot busy               |
-| C1 / C2 / C3| Modbus coils          | Request / busy / photoeye |
+| C1-C5| Modbus coils          | Request / busy / photoeye |
 | CTD1        | Modbus register       | Part count               |
 
 ## Software
