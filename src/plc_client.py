@@ -1,6 +1,6 @@
 from pymodbus.client import ModbusTcpClient
 
-PLC_IP = "192.168.10.10"
+PLC_IP = "192.168.10.50"
 PORT = 502
 COIL_BASE = 16384
 COILS_ORDER = ["full", "robot_moving","photoeye","auto_mode","enable",]
